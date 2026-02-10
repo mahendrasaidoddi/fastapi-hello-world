@@ -19,17 +19,14 @@ jobs:
     - name: Configure Azure credentials
       uses: azure/login@v2
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Set up Docker
       uses: docker/setup-buildx-action@v3.10.0
 
     - name: Login to Azure ACR
       run: |
-        az acr login --name ${{ env.ACR_LOGIN_SERVER }}
+        az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
     - name: Get short SHA
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
@@ -39,7 +36,7 @@ jobs:
     - name: Check if image exists in ACR
       id: check-image
       env:
-        ACR_REGISTRY: ${{ env.ACR_LOGIN_SERVER }}
+        ACR_REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
         IMAGE_TAG: v-${{ env.SHORT_SHA }}
       run: |
         images=("pwc-tax-data-api" "pwc-tax-data-processing" "pwc-tax-data-ingestion-job" "pwc-tax-data-writeback-job")
@@ -66,8 +63,7 @@ jobs:
       run: |
         # Build and push the image with multi-platform support
         docker buildx build \
-          --target api \
           --platform linux/amd64,linux/arm64 \
-          -t ${{ env.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
-          -t ${{ env.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
           --push .
