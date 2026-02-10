@@ -33,10 +33,10 @@ jobs:
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
-    - name: Build and Deploy Container App
-      uses: azure/container-apps-deploy-action@v1
-      with:
-        azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
-        containerAppName: pwc-tax-data-api
-        resourceGroup: rg-acr-dev
-        imageToDeploy: newrgacdev.azurecr.io/pwc-tax-data-api:${{ env.SHORT_SHA }}
+    # 🔹 BUILD + PUSH
+    - name: Build & Push Image (ACR Task)
+      run: |
+        az acr build \
+          --registry newrgacdev \
+          --image pwc-tax-data-api:${{ env.SHORT_SHA }} \
+          .
