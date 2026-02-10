@@ -28,16 +28,22 @@ jobs:
       run: |
         az account show
         az acr list -o table
+
+    - name: Login to ACR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.AZURE_CLIENT_ID }} # Use Client ID
+        password: ${{ secrets.AZURE_CLIENT_SECRET }} # Use Client Secret
         
     - name: Get short SHA
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
-    - name: Build and deploy Container App for API
+    - name: Build and Deploy Container App
       uses: azure/container-apps-deploy-action@v1
       with:
-        app-name: pwc-tax-data-api
-        resource-group: rg-acr-dev
-        registry-server: ${{ secrets.ACR_LOGIN_SERVER }}
-        repository: pwc-tax-data-api
-        image-tag: ${{ env.SHORT_SHA }}
+        azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
+        containerAppName: pwc-tax-data-api
+        resourceGroup: rg-acr-dev
+        imageToDeploy: newrgacdev.azurecr.io/pwc-tax-data-api:${{ env.SHORT_SHA }}
