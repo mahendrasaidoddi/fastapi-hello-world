@@ -10,6 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3.10.0
+
+    # creation of docker builder
+
+    - name: Create Docker builder
+      run: |
+        docker buildx create --use
+        docker buildx inspect --bootstrap
+        
     # Step 1: Checkout the repository with minimal history
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -33,10 +44,11 @@ jobs:
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
-    # 🔹 BUILD + PUSH
-    - name: Build & Push Image (ACR Task)
+    - name: Build and push Docker image for API
       run: |
-        az acr build \
-          --registry newrgacdev \
-          --image pwc-tax-data-api:${{ env.SHORT_SHA }} \
-          .
+        # Build and push the image with multi-platform support
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t ${{ env.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
+          -t ${{ env.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
+          --push .
