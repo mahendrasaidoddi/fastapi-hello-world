@@ -38,7 +38,7 @@ jobs:
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
     - name: Build and deploy Container App for API
-      uses: azure/contianer-apps-deploy-action@v2
+      uses: azure/container-apps-deploy-action@v1
       with:
         app-name: pwc-tax-data-api
         resource-group: rg-acr-dev
