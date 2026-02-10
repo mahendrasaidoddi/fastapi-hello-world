@@ -36,40 +36,12 @@ jobs:
     - name: Get short SHA
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
-    
-    # Check if image exists in ACR
-    
-    - name: Check if image exists in ACR
-      id: check-image
-      env:
-        ACR_REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
-        IMAGE_TAG: v-${{ env.SHORT_SHA }}
-      run: |
-        images=("pwc-tax-data-api" "pwc-tax-data-processing" "pwc-tax-data-ingestion-job" "pwc-tax-data-writeback-job")
-        for images in "${images[@]}"; do echo "Checking ${images}:${IMAGE_TAG}";
-          if az acr repository show-tags --name $ACR_REGISTRY --repository $images --query "contains(@, '$IMAGE_TAG')" | grep -q true; then
-            echo "Image ${images}:${IMAGE_TAG} exists in ACR."; 
-            echo "${images}=true" >> $GITHUB_OUTPUT;
-          else
-            echo "Image ${images}:${IMAGE_TAG} does not exist in ACR."; 
-            echo "${images}=false" >> $GITHUB_OUTPUT;
-          fi
-        done       
 
-    # creation of docker builder
-
-    - name: Create Docker builder
-      run: |
-        docker buildx create --use
-        docker buildx inspect --bootstrap
-
-    # Build and Push the Docker image - skip if the docker image already exists
-    - name: Build and push Docker image for API
-      if: steps.check-image.outputs.pwc-tax-data-api == 'false'
-      run: |
-        # Build and push the image with multi-platform support
-        docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
-          --push .
+    - name: Build and deploy Container App for API
+      uses: azure/contianer-apps-deploy-action@v2
+      with:
+        app-name: pwc-tax-data-api
+        resource-group: rg-acr-dev
+        registry-server: ${{ env.ACR_LOGIN_SERVER }}
+        repository: pwc-tax-data-api
+        image-tag: ${{ env.SHORT_SHA }}
