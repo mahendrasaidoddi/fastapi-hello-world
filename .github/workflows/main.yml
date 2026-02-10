@@ -42,6 +42,6 @@ jobs:
       with:
         app-name: pwc-tax-data-api
         resource-group: rg-acr-dev
-        registry-server: ${{ env.ACR_LOGIN_SERVER }}
+        registry-server: ${{ secrets.ACR_LOGIN_SERVER }}
         repository: pwc-tax-data-api
         image-tag: ${{ env.SHORT_SHA }}
