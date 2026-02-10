@@ -37,9 +37,13 @@ jobs:
         az account show
         az acr list -o table
 
-    - name: Login to ACR
+    - name: Login to ACR for Buildx
+      id: acr
       run: |
-        az acr login --name $(echo "${{ secrets.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+        ACR_NAME=$(echo "${{ secrets.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+        TOKEN=$(az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken)
+        echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+
         
     - name: Get short SHA
       id: sha
@@ -52,4 +56,5 @@ jobs:
           --platform linux/amd64,linux/arm64 \
           -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
           -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
-          --push .
+          --push  \
+          --registry-auth-token ${{ env.TOKEN }} .
