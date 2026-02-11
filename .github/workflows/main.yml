@@ -35,6 +35,13 @@ jobs:
       run: |
         az account show
         az acr list -o table
+        
+    - name: Show runner public IP
+      run: |
+        echo "Public IP address:"
+        curl -s https://api.ipify.org
+        echo ""
+
 
     - name: Login to ACR
       run: |
