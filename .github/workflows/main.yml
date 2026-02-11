@@ -42,7 +42,7 @@ jobs:
 
       - name: Log in to ACR
         run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
+          az acr login --name ${{ secrets.ACR_LOGIN_SERVER}} --username ${{ secrets.ACR_USERNAME }} --password ${{ secrets.ACR_PASSWORD }}
 
       # ────────────────────────────────────────────────
       # Docker metadata → nice tags & labels
