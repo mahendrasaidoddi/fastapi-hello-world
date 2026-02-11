@@ -15,10 +15,10 @@ jobs:
 
     # # creation of docker builder
 
-    # - name: Create Docker builder
-    #   run: |
-    #     docker buildx create --use
-    #     docker buildx inspect --bootstrap
+    - name: Create Docker builder
+      run: |
+        docker buildx create --use
+        docker buildx inspect --bootstrap
 
     # Step 1: Checkout the repository with minimal history
     - name: Checkout code
