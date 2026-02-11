@@ -58,7 +58,7 @@ jobs:
     - name: Build in ACR
       run: |
         az acr build \
-          --registry newrgacdev \
+          --registry newrgacdev.azurecr.io \
           --image pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
           --image pwc-tax-data-api:latest \
           .
