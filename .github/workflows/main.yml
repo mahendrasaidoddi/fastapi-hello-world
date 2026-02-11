@@ -28,6 +28,8 @@ jobs:
       - name: Build and Push Docker Image
         uses: azure/acr-build@v1
         with:
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
           resource-group: rg-acr-dev
           registry: newrgacdev
           image: pwc-tax-data-api:v-${{ env.SHORT_SHA }}
