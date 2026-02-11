@@ -55,10 +55,10 @@ jobs:
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
-    - name: Build and push Docker image for API
+    - name: Build in ACR
       run: |
-        # Build and push the image with multi-platform support
-        docker buildx build \
-          -t newrgacdev.azurecr.io/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
-          -t newrgacdev.azurecr.io/pwc-tax-data-api:latest \
-          --push .
+        az acr build \
+          --registry newrgacdev \
+          --image pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
+          --image pwc-tax-data-api:latest \
+          .
