@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # - name: Set up Docker
-    #   uses: docker/setup-buildx-action@v3.10.0
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3.10.0
 
     # # creation of docker builder
 
