@@ -45,7 +45,7 @@ jobs:
 
     - name: Login to ACR
       run: |
-        az acr login --name $(echo "${{ secrets.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+        docker login -u testnew -p ${{ secrets.ACR_PASSWORD }} newrgacdev.azurecr.io
         
     - name: Get short SHA
       id: sha
@@ -56,6 +56,6 @@ jobs:
         # Build and push the image with multi-platform support
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
+          -t newrgacdev.azurecr.io/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
+          -t newrgacdev.azurecr.io/pwc-tax-data-api:latest \
           --push .
