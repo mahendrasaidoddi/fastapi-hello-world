@@ -5,33 +5,82 @@ on:
     branches:
       - main
 
+# Optional: run on PRs too (build only, no push)
+# pull_request:
+#   branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # useful for git-based versioning if you ever need it
 
-      # Step 2: Azure login
-      - name: Azure Login
+      # ────────────────────────────────────────────────
+      # Option A: Azure CLI + federated credentials (preferred - no long-lived secrets)
+      # ────────────────────────────────────────────────
+      - name: Log in to Azure (OIDC)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 3: Get short SHA for tagging
-      - name: Get short SHA
-        run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
+      # ────────────────────────────────────────────────
+      # Option B: Classic username + password (what you have now)
+      # ────────────────────────────────────────────────
+      # - name: Log in to Azure
+      #   uses: azure/login@v2
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 4: Build & push with ACR Build Action
-      - name: Build and Push Docker Image
-        uses: azure/acr-build@v1
+      - name: Log in to ACR
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      # ────────────────────────────────────────────────
+      # Docker metadata → nice tags & labels
+      # ────────────────────────────────────────────────
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-          resource-group: rg-acr-dev
-          registry: newrgacdev
-          image: pwc-tax-data-api:v-${{ env.SHORT_SHA }}
+          images: |
+            ${{ secrets.ACR_NAME }}.azurecr.io/pwc-tax-data-api
+          tags: |
+            type=raw,value=v-${{ github.sha }},enable=true
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # ────────────────────────────────────────────────
+      # Setup Buildx (supports cache & multi-platform)
+      # ────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ────────────────────────────────────────────────
+      # Build + push
+      # ────────────────────────────────────────────────
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile               # change if not in root
           push: true
-          platform: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64   # same as your original
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Optional: show digest
+      - name: Show image digest
+        if: always()
+        run: echo "Image digest → ${{ steps.meta.outputs.digest || 'not pushed' }}"
