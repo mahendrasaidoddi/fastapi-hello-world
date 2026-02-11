@@ -10,14 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-    # Step 1: Checkout the repository with minimal history
-    - name: Checkout code
-      uses: actions/checkout@v4.2.2
-      with:
-        fetch-depth: 1
-
-    # # creation of docker builder
+    - uses: actions/checkout@v4
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -27,35 +20,23 @@ jobs:
       with:
         driver: docker-container
 
-    - name: Configure Azure credentials
+    - name: Azure Login
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
-    - name: Verify ACR
-      run: |
-        az account show
-        az acr list -o table
-        
-    - name: Show runner public IP
-      run: |
-        echo "Public IP address:"
-        curl -s https://api.ipify.org
-        echo ""
 
-    - uses: azure/docker-login@v2
+    - name: Login to ACR
+      uses: azure/docker-login@v2
       with:
         login-server: newrgacdev.azurecr.io
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
     - name: Get short SHA
-      id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
 
-    - name: Build and push Docker image for API
+    - name: Build and push Docker image
       run: |
-        # Build and push the image with multi-platform support
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           -t newrgacdev.azurecr.io/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
