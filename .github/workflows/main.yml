@@ -10,21 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v3.10.0
-
-    # # creation of docker builder
-
-    - name: Create Docker builder
-      run: |
-        docker buildx create --use
-        docker buildx inspect --bootstrap
 
     # Step 1: Checkout the repository with minimal history
     - name: Checkout code
       uses: actions/checkout@v4.2.2
       with:
         fetch-depth: 1
+
+    # # creation of docker builder
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
 
     - name: Configure Azure credentials
       uses: azure/login@v2
@@ -41,7 +39,6 @@ jobs:
         echo "Public IP address:"
         curl -s https://api.ipify.org
         echo ""
-
 
     - uses: azure/docker-login@v2
       with:
