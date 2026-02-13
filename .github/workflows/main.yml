@@ -18,7 +18,7 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Login to ACR
-      run: docker login -u ${{secrets.ACR_USERNAME}} -p ${{ secrets.ACR_PASSWORD }} ${{ secrets.ACR_LOGIN_SERVER }}
+      run: az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
 
     - name: Verify ACR
       run: |
@@ -47,6 +47,7 @@ jobs:
         done       
 
     - name: Build and push Docker image for API
+      if: steps.check-image.outputs.pwc-tax-data-api == 'false'
       run: |
         # Build and push the image with multi-platform support
         docker buildx build \
