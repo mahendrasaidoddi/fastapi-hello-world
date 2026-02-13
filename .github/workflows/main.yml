@@ -17,20 +17,40 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Azure CLI script
-      uses: azure/cli@v2
-      with:
-        azcliversion: latest
-        inlineScript: |
-          az account show
-
     - name: Login to ACR
       run: az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
 
-    - name: Build Image
+    - name: Verify ACR
       run: |
-        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/myapp:${{ github.sha }} .
+        az account show
+        az acr list -o table
 
-    - name: Push Image
+    - name: Get short SHA
+      id: sha
+      run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
+
+    - name: Check if image exists in ACR
+      id: check-image
+      env:
+        ACR_REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
+        IMAGE_TAG: v-${{ env.SHORT_SHA }}
       run: |
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/myapp:${{ github.sha }}
+        images=("pwc-tax-data-api" "pwc-tax-data-processing" "pwc-tax-data-ingestion-job" "pwc-tax-data-writeback-job")
+        for images in "${images[@]}"; do echo "Checking ${images}:${IMAGE_TAG}";
+          if az acr repository show-tags --name $ACR_REGISTRY --repository $images --query "contains(@, '$IMAGE_TAG')" | grep -q true; then
+            echo "Image ${images}:${IMAGE_TAG} exists in ACR."; 
+            echo "${images}=true" >> $GITHUB_OUTPUT;
+          else
+            echo "Image ${images}:${IMAGE_TAG} does not exist in ACR."; 
+            echo "${images}=false" >> $GITHUB_OUTPUT;
+          fi
+        done       
+
+    - name: Build and push Docker image for API
+      run: |
+        # Build and push the image with multi-platform support
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:v-${{ env.SHORT_SHA }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/pwc-tax-data-api:latest \
+          --push .
