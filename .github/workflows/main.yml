@@ -17,6 +17,9 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3.10.0
+
     - name: Login to ACR
       run: az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
 
@@ -28,6 +31,12 @@ jobs:
     - name: Get short SHA
       id: sha
       run: echo "SHORT_SHA=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
+
+    # creation of docker builder
+    - name: Create Docker builder
+      run: |
+        docker buildx create --use
+        docker buildx inspect --bootstrap
 
     - name: Check if image exists in ACR
       id: check-image
